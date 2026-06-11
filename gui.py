@@ -63,6 +63,7 @@ class PhoneWizard(QMainWindow):
 
         self.idx = 0
         self.groups: list[QButtonGroup] = []
+        self.answers: dict[int, int] = {}
         self._init_widgets()
         self._show_question()
 
@@ -127,6 +128,12 @@ class PhoneWizard(QMainWindow):
             group.addButton(rb, i)
             self.radio_layout.addWidget(rb)
 
+        saved = self.answers.get(self.idx)
+        if saved is not None:
+            btn = group.button(saved)
+            if btn is not None:
+                btn.setChecked(True)
+
         if self.idx == 0:
             self.back_btn.setEnabled(False)
         else:
@@ -146,6 +153,8 @@ class PhoneWizard(QMainWindow):
         if group.checkedId() == -1:
             return
 
+        self.answers[self.idx] = group.checkedId()
+
         if self.idx < len(self.questions) - 1:
             self.idx += 1
             self._show_question()
@@ -159,7 +168,7 @@ class PhoneWizard(QMainWindow):
         self.header.setText("РЕЗУЛЬТАТ ПОДБОРА")
         self.prompt.setText("")
 
-        answers = [g.checkedId() for g in self.groups]
+        answers = [self.answers.get(i, -1) for i in range(len(self.questions))]
 
         buf = StringIO()
         old = sys.stdout
@@ -186,6 +195,7 @@ class PhoneWizard(QMainWindow):
 
     def _restart(self):
         self.idx = 0
+        self.answers = {}
         for group in self.groups:
             group.setExclusive(False)
             for btn in group.buttons():
